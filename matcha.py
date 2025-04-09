@@ -104,7 +104,7 @@ def randomizerr(shape, count):
     i = count
     while i > 0:
         option = random.choice(["new", "reuse"])
-        print(f"option: {option}")
+        #print(f"option: {option}")
 
         if option == "new":
             random_shape = random.getrandbits(32)
@@ -118,37 +118,19 @@ def randomizerr(shape, count):
             choices.append(random_shape_array)
 
         else: # reuse shape
-            degree = random.randint(1, 3) # degree of change for changing shape
-            if degree == 1:
-                shapeclone = shape.copy()
-                random_shape = random.getrandbits(8)
-                position = random.randint(0, 3) # randomly choose what index to replace
-                shapeclone[position] = random_shape
-                choices.append(shapeclone)
-                #print(f"option: {option}, choices: {choices}, shape: {shape}, count: {count}")
+            degree = random.randint(1, 3)
+            shapeclone = shape.copy()
+            positions = random.sample(range(4), degree)
+            new_bytes = [random.getrandbits(8) for _ in range(degree)]
+            for pos, val in zip(positions, new_bytes):
+                shapeclone[pos] = val
+            choices.append(shapeclone)
 
-            elif degree == 2:
-                shapeclone = shape.copy()
-                random_shape_array = [random.getrandbits(8), random.getrandbits(8)]
-                position = random.sample(range(count), degree) # Randomly choose 2 unique numbers from [0, 1, 2, ...., count-1]
-                for i in range(degree):
-                    shapeclone[position[i]] = random_shape_array[i]
-                choices.append(shapeclone)
-                #print(f"option: {option}, choices: {choices}, shape: {shape}, count: {count}")
-
-            elif degree == 3:
-                shapeclone = shape.copy()
-                random_shape_array = [random.getrandbits(8), random.getrandbits(8), random.getrandbits(8)]
-                position = random.sample(range(count), degree) # Randomly choose 2 unique numbers from [0, 1, 2, ...., count-1]
-                for i in range(degree):
-                    shapeclone[position[i]] = random_shape_array[i]
-                choices.append(shapeclone)
-                #print(f"option: {option}, choices: {choices}, shape: {shape}, count: {count}")
         i -= 1
-        time.sleep(0.5)
+        time.sleep(0.25)
         #print("i", i)
 
-    print(f"randomizerr generated {len(choices)} shapes!")
+    #print(f"randomizerr generated {len(choices)} shapes!")
     return choices
 
 # matching game
