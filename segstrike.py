@@ -162,8 +162,8 @@ def segment_strike(diff="easy"):
             score += 1
 
         else:
-            if key is None: print("hurry UP!!", key, end="")
-            else: print("Wrong key!!", key, end="")
+            if key is None: print("hurry UP!! ",  end="")
+            else: print("Wrong key!! ", end="")
 
             if diff == "medium" or diff == "ultra":
                 if score != 0:

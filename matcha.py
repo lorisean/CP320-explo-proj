@@ -99,13 +99,13 @@ def write_segments(segment_data, toggle_colon=False):
 def clear_display():
     write_segments([0, 0, 0, 0])
 
-# matching game
-# easy for 2 digits, med for 3, hard for everything
-# randomize 32 bits and split into array[4] (hard)
 def randomizerr(shape, count):
     choices = []
-    while count > 0:
+    i = count
+    while i > 0:
         option = random.choice(["new", "reuse"])
+        print(f"option: {option}")
+
         if option == "new":
             random_shape = random.getrandbits(32)
             random_shape_array = [
@@ -114,45 +114,57 @@ def randomizerr(shape, count):
                 (random_shape >> 8) & 0xFF,
                 random_shape & 0xFF  # last 8 bits
             ]
-            print(f"choices: {choices}, random_shape_array: {random_shape_array}, count: {count}")
+            #print(f"option: {option}, choices: {choices}, random_shape_array: {random_shape_array}, count: {count}")
             choices.append(random_shape_array)
 
         else: # reuse shape
             degree = random.randint(1, 3) # degree of change for changing shape
             if degree == 1:
+                shapeclone = shape.copy()
                 random_shape = random.getrandbits(8)
                 position = random.randint(0, 3) # randomly choose what index to replace
-                shape[position] = random_shape
-                choices.append(shape)
-                print(f"choices: {choices}, shape: {shape}, count: {count}")
+                shapeclone[position] = random_shape
+                choices.append(shapeclone)
+                #print(f"option: {option}, choices: {choices}, shape: {shape}, count: {count}")
 
             elif degree == 2:
+                shapeclone = shape.copy()
                 random_shape_array = [random.getrandbits(8), random.getrandbits(8)]
                 position = random.sample(range(count), degree) # Randomly choose 2 unique numbers from [0, 1, 2, ...., count-1]
                 for i in range(degree):
-                    shape[position[i]] = random_shape_array[i]
-                choices.append(shape)
-                print(f"choices: {choices}, shape: {shape}, count: {count}")
+                    shapeclone[position[i]] = random_shape_array[i]
+                choices.append(shapeclone)
+                #print(f"option: {option}, choices: {choices}, shape: {shape}, count: {count}")
 
             elif degree == 3:
+                shapeclone = shape.copy()
                 random_shape_array = [random.getrandbits(8), random.getrandbits(8), random.getrandbits(8)]
                 position = random.sample(range(count), degree) # Randomly choose 2 unique numbers from [0, 1, 2, ...., count-1]
                 for i in range(degree):
-                    shape[position[i]] = random_shape_array[i]
-                choices.append(shape)
-                print(f"choices: {choices}, shape: {shape}, count: {count}")
+                    shapeclone[position[i]] = random_shape_array[i]
+                choices.append(shapeclone)
+                #print(f"option: {option}, choices: {choices}, shape: {shape}, count: {count}")
+        i -= 1
+        time.sleep(0.5)
+        #print("i", i)
+
+    print(f"randomizerr generated {len(choices)} shapes!")
     return choices
 
+# matching game
+# easy for 2 digits, med for 3, hard for everything
+# randomize 32 bits and split into array[4] (hard)
 def matcha(diff="easy"):
-    print(f"{diff} difficulty.... \nGet ready! You have 3 seconds to memorize!!")
+    print(f"{diff} difficulty.... \nGet ready!")
     time.sleep(1)
     score = 0
-    round_time = 60
+    game_time = 60*3
     round_speed = 3
     shapegen = 4
-    end_time = time.time() + round_time
-
-    while time.time() < end_time:
+    end_time = time.time() + game_time
+    winner = False
+    round = 1
+    while time.time() < end_time and not winner:
         random_shape = random.getrandbits(32)
         random_shape_array = [
             (random_shape >> 24) & 0xFF,  # first 8 bits
@@ -161,37 +173,51 @@ def matcha(diff="easy"):
             random_shape & 0xFF  # last 8 bits
         ]
 
-        print("memorize the shape!", random_shape_array)
-        print()
-
-        write_segments(random_shape_array)
-        time.sleep(round_speed)
         # randomly make 4+ other shapes or edit the existing shape for max randomness
         clear_display()
         time.sleep(1)
         # create options
         random_shape_choices = randomizerr(random_shape_array, shapegen) # array of arrays
-        index = random.randint(0, shapegen - 1)
+        index = random.randint(1, shapegen - 1)
         random_shape_choices.insert(index, random_shape_array)
+        print()
+        print(f"Round {round}")
 
         tries = 3
         while tries > 0:
             tries -= 1
+            print(f"Memorize this shape!") #, random_shape_array)
+            #print()
+            write_segments(random_shape_array)
+            time.sleep(round_speed)
+            clear_display()
+            time.sleep(1)
+
+            print("The shapes...")
             for shapes in random_shape_choices: # shapes is an array like random_shape_array
-                print("debug:shapes", shapes)
+
+                #print("debug:shapes", shapes)
+
                 write_segments(shapes)
                 time.sleep(round_speed) # see shapes for round_speed seconds
             clear_display()
-            userinput = input("Which shape was the correct match (type r to see again)?: ")
+            userinput = input("Which shape was the correct match: ")
             if userinput == str(index+1):
                 print("Well done!")
-                score += 1
+                #winner = True
+                score+=1
                 break
-            elif userinput.lower() == "r":
-                print("okay. showing again.", tries, "left...")
-
+            else :
+                print("NOPE.", tries, "left...")
+        round += 1
 
     print(f"\nTime's up! Your score: {score}")
+
+    """if winner:
+        print("You win!")
+    else:
+        print("You lose AWWWW!")"""
+
     digits = [int(x) for x in str(score).rjust(4, '0')]
     seg_map = [0x3F, 0x06, 0x5B, 0x4F, 0x66,
                0x6D, 0x7D, 0x07, 0x7F, 0x6F]
