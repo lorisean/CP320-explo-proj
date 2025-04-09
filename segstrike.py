@@ -20,13 +20,18 @@ GPIO.output(DIO, GPIO.HIGH)
 TOP_SEG = 0x01
 BOT_SEG = 0x08
 RIGHT_SEG = 0b00000110
-LEFT_SEG = 0b000110000
+LEFT_SEG = 0b00110000
 COLON = 0x80
 
 UP_arr = [TOP_SEG, TOP_SEG, TOP_SEG, TOP_SEG]
 DOWN_arr = [BOT_SEG, BOT_SEG, BOT_SEG, BOT_SEG]
 RIGHT_arr = [0, 0, 0, RIGHT_SEG]
 LEFT_arr = [LEFT_SEG, 0, 0, 0]
+
+notUP_arr = [TOP_SEG, TOP_SEG ^ 0b01000000, TOP_SEG ^ 0b01000000, TOP_SEG]
+notDOWN_arr = [BOT_SEG, BOT_SEG ^ 0b01000000, BOT_SEG ^ 0b01000000, BOT_SEG]
+notRIGHT_arr = [0, 0 ^ 0b01000000, 0 ^ 0b01000000, RIGHT_SEG]
+notLEFT_arr = [LEFT_SEG, 0 ^ 0b01000000, 0 ^ 0b01000000, 0]
 
 # I/O helpers
 def start():
@@ -115,21 +120,85 @@ def get_key(timeout=100):
 
 # Game logic
 def segment_strike(diff="easy"):
-    print(f"{diff} mode.... \nGet ready! You have 15 seconds!!")
+    print(f"{diff} difficulty.... \nGet ready! You have 15 seconds!!")
+
     time.sleep(1)
     score = 0
     round_time = 15
     end_time = time.time() + round_time
 
     while time.time() < end_time:
-        mode = random.choice(['up', 'down', 'left', 'right'])
-        if mode == 'up':
+        direction = random.choice(['up', 'down', 'left', 'right', '!up', '!up', '!left', '!right'])
+        if direction == 'up':
             write_segments(UP_arr, True)
-        elif mode == 'down':
+        elif direction == 'down':
             write_segments(DOWN_arr, True)
-        elif mode == 'right':
+        elif direction == 'right':
             write_segments(RIGHT_arr, True)
-        elif mode == 'left':
+        elif direction == 'left':
+            write_segments(LEFT_arr, True)
+
+        elif direction == '!up':
+            write_segments(notUP_arr, True)
+        elif direction == '!down':
+            write_segments(notDOWN_arr, True)
+        elif direction == '!right':
+            write_segments(notRIGHT_arr, True)
+        elif direction == '!left':
+            write_segments(notLEFT_arr, True)
+
+        #print("debug: mode ", mode)
+        if diff == "hard":
+            key = get_key(1)
+        else:
+            key = get_key()
+
+        if (direction == 'up' and key == 'w') or (direction == 'down' and key == 's') or (direction == 'left' and key == 'a') or (direction == 'right' and key == 'd'):
+            print("Nice! +1")
+            score += 1
+
+        else:
+            if key is None: print("hurry UP!!", key)
+            else: print("Wrong key!!", key)
+
+            if diff == "medium":
+                if score != 0:
+                    # print("-1")
+                    score -= 1
+            elif diff == "hard":
+                if score != 0:
+                    # print("-1")
+                    score -= 1
+
+    print(f"\nTime's up! Your score: {score}")
+    digits = [int(x) for x in str(score).rjust(4, '0')]
+    seg_map = [0x3F, 0x06, 0x5B, 0x4F, 0x66,
+               0x6D, 0x7D, 0x07, 0x7F, 0x6F]
+    seg_digits = [seg_map[d] for d in digits]
+    write_segments(seg_digits)
+
+    time.sleep(3)
+    clear_display()
+
+# matching game
+# easy for 2 digits, med for 3, hard for everything
+# randomize 32 bits and split into array[4] (hard)
+def matcha(diff="easy"):
+    print(f"{diff} difficulty.... \nGet ready! You have 15 seconds!!")
+    time.sleep(1)
+    score = 0
+    round_time = 15
+    end_time = time.time() + round_time
+
+    while time.time() < end_time:
+        direction = random.choice(['up', 'down', 'left', 'right'])
+        if direction == 'up':
+            write_segments(UP_arr, True)
+        elif direction == 'down':
+            write_segments(DOWN_arr, True)
+        elif direction == 'right':
+            write_segments(RIGHT_arr, True)
+        elif direction == 'left':
             write_segments(LEFT_arr, True)
 
         #print("debug: mode ", mode)
@@ -138,17 +207,22 @@ def segment_strike(diff="easy"):
         else:
             key = get_key()
 
-        if (mode == 'up' and key == 'w') or (mode == 'down' and key == 's') or (mode == 'left' and key == 'a') or (mode == 'right' and key == 'd'):
+        if (direction == 'up' and key == 'w') or (direction == 'down' and key == 's') or (direction == 'left' and key == 'a') or (direction == 'right' and key == 'd'):
             print("Nice! +1")
             score += 1
+
         else:
-            print("Wrong key!!  ", key)
+            if key is None: print("hurry UP!!", key)
+            else: print("Wrong key!!", key)
+
             if diff == "medium":
-                print("oops... -1")
-                score -= 1
+                if score != 0:
+                    # print("-1")
+                    score -= 1
             elif diff == "hard":
-                print("oh NAH! -1")
-                score -= 1
+                if score != 0:
+                    # print("-1")
+                    score -= 1
 
     print(f"\nTime's up! Your score: {score}")
     digits = [int(x) for x in str(score).rjust(4, '0')]
@@ -180,3 +254,23 @@ if __name__ == "__main__":
     finally:
         clear_display()
         GPIO.cleanup()
+else:
+    write_segments(UP_arr, True)
+    time.sleep(1)
+    write_segments(DOWN_arr, True)
+    time.sleep(1)
+    write_segments(RIGHT_arr, True)
+    time.sleep(1)
+    write_segments(LEFT_arr, True)
+    time.sleep(1)
+    write_segments(notUP_arr, True)
+    time.sleep(1)
+    write_segments(notDOWN_arr, True)
+    time.sleep(1)
+    write_segments(notRIGHT_arr, True)
+    time.sleep(1)
+    write_segments(notLEFT_arr, True)
+
+    time.sleep(1)
+    clear_display()
+    GPIO.cleanup()
